@@ -1,15 +1,28 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
-#[macro_use]
-extern crate rocket;
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
 #[get("/")]
-fn index() -> &'static str {
-    "Hello, world! Production!"
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Hello world!")
 }
 
-#[rocket::main]
-async fn main() -> Result<(), rocket::Error> {
-    let _rocket = rocket::build().mount("/", routes![index]).launch().await?;
-    Ok(())
+#[post("/echo")]
+async fn echo(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
+}
+
+async fn manual_hello() -> impl Responder {
+    HttpResponse::Ok().body("Hey there!")
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .service(hello)
+            .service(echo)
+            .route("/hey", web::get().to(manual_hello))
+    })
+    .bind(("127.0.0.1", 10000))?
+    .run()
+    .await
 }
